@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .card {
+      background: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      width: 360px;
+      text-align: center;
+    }
+    h2 {
+      color: #1e3c72;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #555;
+      margin-bottom: 24px;
+    }
+    a.button {
+      display: inline-block;
+      padding: 10px 22px;
+      background: #1e3c72;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 6px;
+    }
+    a.button:hover {
+      background: #2a5298;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Welcome 👋</h2>
+    <p>You have successfully logged in to CollegeChatbot.</p>
+    <a class="button" href="{% url 'logout' %}">Logout</a>
+  </div>
+</body>
+</html>

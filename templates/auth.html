@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CollegeChatbot — Account</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      width: 100%;
+      max-width: 340px;
+      padding: 30px 28px 28px;
+    }
+
+    h2 {
+      text-align: center;
+      font-size: 22px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 22px;
+    }
+
+    /* tabs */
+    .tabs {
+      display: flex;
+      background: #f5f5f5;
+      border-radius: 8px;
+      padding: 4px;
+      margin-bottom: 22px;
+      gap: 4px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: #888;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: #ff5722;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(255,87,34,0.25);
+    }
+
+    /* panels */
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 12px;
+      outline: none;
+      color: #333;
+      background: #fafafa;
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      border-color: #ff5722;
+      background: #fff;
+    }
+    input::placeholder { color: #bbb; }
+
+    .forgot-link {
+      display: block;
+      text-align: left;
+      font-size: 13px;
+      color: #ff5722;
+      font-weight: 600;
+      text-decoration: none;
+      margin-bottom: 18px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .forgot-link:hover { text-decoration: underline; }
+
+    button[type="submit"] {
+      width: 100%;
+      padding: 13px;
+      background: #ff5722;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 18px;
+    }
+    button[type="submit"]:hover { background: #e64a19; }
+
+    .bottom-link {
+      text-align: center;
+      font-size: 13px;
+      color: #888;
+    }
+    .bottom-link a {
+      color: #ff5722;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .bottom-link a:hover { text-decoration: underline; }
+
+    .msg {
+      padding: 10px 12px;
+      border-radius: 7px;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+    .msg.error   { background: #fdecea; color: #c0392b; border: 1px solid #f5c6cb; }
+    .msg.success { background: #eafaf1; color: #1e8449; border: 1px solid #a9dfbf; }
+
+    /* forgot panel */
+    .back-link {
+      display: inline-block;
+      font-size: 13px;
+      color: #ff5722;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 16px;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+    .back-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <!-- Server messages from Django -->
+  {% if messages %}
+    {% for message in messages %}
+      <span id="srv-msg"
+            data-type="{{ message.tags }}"
+            data-text="{{ message }}">
+      </span>
+    {% endfor %}
+  {% endif %}
+
+  <!-- ── LOGIN PANEL ─────────────────────── -->
+  <div class="panel active" id="panel-login">
+    <h2>Login Form</h2>
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('login')">Login</button>
+      <button class="tab-btn"        onclick="switchTab('signup')">Signup</button>
+    </div>
+    <div id="msg-login"></div>
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="login">
+      <input type="text"     name="username" placeholder="Username" required>
+      <input type="password" name="password" placeholder="Password" required>
+      <button type="button" class="forgot-link" onclick="switchTab('forgot')">Forgot password?</button>
+      <button type="submit">Login</button>
+    </form>
+    <div class="bottom-link">
+      Not a member? <a onclick="switchTab('signup')">Signup now</a>
+    </div>
+  </div>
+
+  <!-- ── SIGNUP PANEL ────────────────────── -->
+  <div class="panel" id="panel-signup">
+    <h2>Create Account</h2>
+    <div class="tabs">
+      <button class="tab-btn"        onclick="switchTab('login')">Login</button>
+      <button class="tab-btn active" onclick="switchTab('signup')">Signup</button>
+    </div>
+    <div id="msg-signup"></div>
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden"   name="action" value="signup">
+      <input type="text"     name="username"         placeholder="Username" required>
+      <input type="password" name="password"         placeholder="Password" required>
+      <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+      <button type="submit">Create Account</button>
+    </form>
+    <div class="bottom-link">
+      Already a member? <a onclick="switchTab('login')">Login now</a>
+    </div>
+  </div>
+
+  <!-- ── FORGOT PASSWORD PANEL ───────────── -->
+  <div class="panel" id="panel-forgot">
+    <h2>Reset Password</h2>
+    <button type="button" class="back-link" onclick="switchTab('login')">← Back to Login</button>
+    <div id="msg-forgot"></div>
+    <form method="POST">
+      {% csrf_token %}
+      <input type="hidden"   name="action" value="forgot">
+      <input type="text"     name="username"             placeholder="Username" required>
+      <input type="password" name="new_password"         placeholder="New Password" required>
+      <input type="password" name="confirm_new_password" placeholder="Confirm New Password" required>
+      <button type="submit">Reset Password</button>
+    </form>
+  </div>
+
+</div>
+
+<script>
+  function switchTab(name) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + name).classList.add('active');
+  }
+
+  // Show server message on the right panel
+  const srvMsg = document.getElementById('srv-msg');
+  if (srvMsg) {
+    const raw      = srvMsg.getAttribute('data-text');
+    const type     = srvMsg.getAttribute('data-type');
+    const [prefix, ...rest] = raw.split(':');
+    const text     = rest.join(':');
+    const panel    = prefix.replace('_error','').replace('_success','');
+    const cssClass = type.includes('error') ? 'error' : 'success';
+    const msgDiv   = document.getElementById('msg-' + panel);
+    if (msgDiv) {
+      msgDiv.innerHTML = `<div class="msg ${cssClass}">${text}</div>`;
+      switchTab(panel);
+    }
+  }
+</script>
+</body>
+</html>

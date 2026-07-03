@@ -14,13 +14,13 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.contrib import admin
 from django.urls import path
 from campusbot import views
 
 urlpatterns = [
-    path('', views.login_view, name='login'),
-    path('forgot-password/', views.forgot_password_view, name='forgot_password'),
-    path('dashboard/', views.dashboard_view, name='dashboard'),
-    path('logout/', views.logout_view, name='logout'),
-    path('index/', views.index_view, name='index'),
+    path('admin/', admin.site.urls),
+    path('',           views.auth_page,       name='auth'),
+    path('dashboard/', views.dashboard_view,  name='dashboard'),
+    path('logout/',    views.logout_view,     name='logout'),
 ]

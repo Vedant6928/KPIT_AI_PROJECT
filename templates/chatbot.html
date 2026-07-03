@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>ASKKPIT</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f9f9f7;
+      --surface: #ffffff;
+      --border: #e8e5de;
+      --text: #1a1a18;
+      --text-muted: #888880;
+      --orange: #ff5722;
+      --orange-dark: #e64a19;
+      --sidebar-w: 260px;
+      --input-radius: 14px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1a1917;
+        --surface: #242320;
+        --border: #333330;
+        --text: #f0ede6;
+        --text-muted: #6b6b63;
+      }
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100svh;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ─────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 16px 12px;
+      flex-shrink: 0;
+      transition: transform 0.25s ease;
+    }
+
+    .sidebar-logo {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--orange);
+      letter-spacing: 1.5px;
+      padding: 6px 8px 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+
+    .new-chat-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: var(--orange);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 20px;
+      transition: background 0.2s;
+    }
+    .new-chat-btn:hover { background: var(--orange-dark); }
+
+    .sidebar-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 0 8px;
+      margin-bottom: 6px;
+    }
+
+    .chat-history-item {
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chat-history-item:hover { background: var(--border); color: var(--text); }
+
+    .sidebar-bottom {
+      margin-top: auto;
+      border-top: 1px solid var(--border);
+      padding-top: 14px;
+    }
+
+    .user-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .user-row:hover { background: var(--border); }
+
+    .avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--orange);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .user-name { font-size: 13.5px; font-weight: 600; }
+    .logout-link {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-left: auto;
+    }
+    .logout-link:hover { color: var(--orange); }
+
+    /* ── MAIN ────────────────────────────── */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* top bar (mobile) */
+    .topbar {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .topbar-logo {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--orange);
+      letter-spacing: 1.5px;
+      flex: 1;
+    }
+
+    .menu-btn {
+      background: none; border: none;
+      cursor: pointer; padding: 4px;
+      display: flex; align-items: center;
+    }
+    .menu-btn svg { width: 22px; height: 22px; stroke: var(--text); }
+
+    /* chat area */
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* welcome screen */
+    .welcome {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px 24px;
+      text-align: center;
+    }
+
+    .welcome-icon {
+      width: 64px; height: 64px;
+      background: var(--orange);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 22px;
+      font-size: 28px; font-weight: 900; color: #fff; letter-spacing: 0;
+    }
+
+    .welcome h1 {
+      font-size: clamp(22px, 4vw, 30px);
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--text);
+    }
+
+    .welcome p {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 380px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .suggestion-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+      width: 100%;
+      max-width: 560px;
+    }
+
+    .suggestion-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 13.5px;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      line-height: 1.4;
+    }
+    .suggestion-card:hover {
+      border-color: var(--orange);
+      background: var(--bg);
+    }
+    .suggestion-card .s-icon { font-size: 18px; margin-bottom: 6px; display: block; }
+    .suggestion-card .s-text { font-weight: 500; display: block; margin-bottom: 3px; }
+    .suggestion-card .s-sub  { font-size: 12px; color: var(--text-muted); display: block; }
+
+    /* messages */
+    .messages {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      padding: 24px 0;
+    }
+
+    .msg-row {
+      display: flex;
+      padding: 10px clamp(16px, 6vw, 80px);
+      gap: 14px;
+      max-width: 860px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    .msg-av {
+      width: 30px; height: 30px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff;
+      margin-top: 2px;
+    }
+    .msg-av.bot  { background: var(--orange); }
+    .msg-av.user { background: #444; }
+
+    .msg-bubble { font-size: 15px; line-height: 1.65; color: var(--text); }
+    .msg-name   { font-size: 12px; font-weight: 700; margin-bottom: 4px; color: var(--text-muted); }
+
+    /* ── INPUT BAR ───────────────────────── */
+    .input-wrap {
+      padding: clamp(12px, 2vw, 20px) clamp(12px, 6vw, 80px);
+      background: var(--bg);
+      flex-shrink: 0;
+    }
+
+    .input-box {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--input-radius);
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 10px 10px 10px 16px;
+      transition: border-color 0.2s;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .input-box:focus-within { border-color: var(--orange); }
+
+    .input-box textarea {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 15px;
+      color: var(--text);
+      resize: none;
+      line-height: 1.5;
+      max-height: 160px;
+      min-height: 24px;
+      font-family: inherit;
+      padding: 2px 0;
+    }
+    .input-box textarea::placeholder { color: var(--text-muted); }
+
+    .send-btn {
+      width: 36px; height: 36px;
+      border-radius: 9px;
+      background: var(--orange);
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.2s, opacity 0.2s;
+    }
+    .send-btn:hover { background: var(--orange-dark); }
+    .send-btn:disabled { opacity: 0.4; cursor: default; }
+    .send-btn svg { width: 17px; height: 17px; stroke: #fff; }
+
+    .input-hint {
+      text-align: center;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      max-width: 760px;
+      margin-left: auto; margin-right: auto;
+    }
+
+    /* typing indicator */
+    .typing-row { align-items: center; }
+    .typing { display: flex; gap: 4px; padding: 4px 0; }
+    .typing span {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--text-muted);
+      animation: bounce 1.1s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.15s; }
+    .typing span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce {
+      0%,60%,100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    /* overlay for mobile sidebar */
+    .overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 10;
+    }
+
+    /* ── RESPONSIVE ─────────────────────── */
+    @media (max-width: 680px) {
+      .sidebar {
+        position: fixed;
+        top: 0; left: 0; bottom: 0;
+        z-index: 20;
+        transform: translateX(-100%);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .overlay.show { display: block; }
+      .topbar { display: flex; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">ASKKPIT</div>
+
+  <button class="new-chat-btn" onclick="newChat()">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    New Chat
+  </button>
+
+  <div class="sidebar-label">Recent</div>
+  <div class="chat-history-item">Admission requirements</div>
+  <div class="chat-history-item">Fee structure 2024</div>
+  <div class="chat-history-item">Hostel availability</div>
+  <div class="chat-history-item">Placement records</div>
+
+  <div class="sidebar-bottom">
+    <div class="user-row">
+      <div class="avatar">{{ request.user.username|first|upper }}</div>
+      <span class="user-name">{{ request.user.username }}</span>
+      <a href="{% url 'logout' %}" class="logout-link">Logout</a>
+    </div>
+  </div>
+</aside>
+
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Mobile top bar -->
+  <div class="topbar">
+    <button class="menu-btn" onclick="toggleSidebar()" aria-label="Open menu">
+      <svg fill="none" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <span class="topbar-logo">ASKKPIT</span>
+    <div class="avatar" style="width:28px;height:28px;font-size:11px;">{{ request.user.username|first|upper }}</div>
+  </div>
+
+  <!-- Chat area -->
+  <div class="chat-area" id="chatArea">
+
+    <!-- Welcome screen -->
+    <div class="welcome" id="welcomeScreen">
+      <div class="welcome-icon">AK</div>
+      <h1>Chat with ASKKPIT</h1>
+      <p>Your college assistant — ask about admissions, courses, fees, hostel, placements, and more.</p>
+
+      <div class="suggestion-grid">
+        <div class="suggestion-card" onclick="sendSuggestion('What are the admission requirements?')">
+          <span class="s-icon">🎓</span>
+          <span class="s-text">Admissions</span>
+          <span class="s-sub">Requirements & process</span>
+        </div>
+        <div class="suggestion-card" onclick="sendSuggestion('What is the fee structure?')">
+          <span class="s-icon">💰</span>
+          <span class="s-text">Fee structure</span>
+          <span class="s-sub">Tuition & scholarships</span>
+        </div>
+        <div class="suggestion-card" onclick="sendSuggestion('Tell me about hostel facilities')">
+          <span class="s-icon">🏠</span>
+          <span class="s-text">Hostel & campus</span>
+          <span class="s-sub">Facilities & life</span>
+        </div>
+        <div class="suggestion-card" onclick="sendSuggestion('What courses are offered?')">
+          <span class="s-icon">📚</span>
+          <span class="s-text">Courses offered</span>
+          <span class="s-sub">Programs & branches</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Messages will appear here -->
+    <div class="messages" id="messages" style="display:none;"></div>
+
+  </div>
+
+  <!-- Input -->
+  <div class="input-wrap">
+    <div class="input-box">
+      <textarea id="userInput"
+                placeholder="Ask ASKKPIT anything about your college…"
+                rows="1"
+                onkeydown="handleKey(event)"
+                oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()" aria-label="Send">
+        <svg fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+          <line x1="22" y1="2" x2="11" y2="13"/>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+    <p class="input-hint">ASKKPIT may make mistakes. Verify important info.</p>
+  </div>
+
+</main>
+
+<script>
+  const chatArea   = document.getElementById('chatArea');
+  const messagesEl = document.getElementById('messages');
+  const welcomeEl  = document.getElementById('welcomeScreen');
+  const inputEl    = document.getElementById('userInput');
+
+  // Replace this with a real fetch() to your Django API
+  const KB = {
+    "what are the admission requirements?": "Admissions require your 12th grade marksheet, a valid ID, and entrance exam score where applicable. Applications open every June.",
+    "what is the fee structure?": "Tuition ranges from ₹50,000 to ₹1,20,000 per year depending on the program. Scholarships are available for merit and need-based cases.",
+    "tell me about hostel facilities": "On-campus hostels with 24/7 security, Wi-Fi, a mess, and a common room. Hostel seats are allotted after admission on a first-come basis.",
+    "what courses are offered?": "We offer Computer Science, Mechanical Engineering, Civil Engineering, Business Administration, and Design programs.",
+  };
+
+  function getReply(text) {
+    const key = text.trim().toLowerCase();
+    return KB[key] || "That's a great question! For detailed information, please contact the admissions office or visit the college website.";
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  }
+
+  function sendSuggestion(text) {
+    inputEl.value = text;
+    sendMessage();
+  }
+
+  function addMessage(text, who) {
+    if (welcomeEl.style.display !== 'none') {
+      welcomeEl.style.display = 'none';
+      messagesEl.style.display = 'flex';
+    }
+    const row = document.createElement('div');
+    row.className = 'msg-row' + (who === 'typing' ? ' typing-row' : '');
+
+    const initial = who === 'bot' ? 'AK' : (document.querySelector('.avatar')?.textContent?.trim() || 'U');
+    const avClass = who === 'bot' || who === 'typing' ? 'bot' : 'user';
+
+    row.innerHTML = `
+      <div class="msg-av ${avClass}">${who === 'bot' || who === 'typing' ? 'AK' : initial}</div>
+      <div>
+        <div class="msg-name">${who === 'bot' || who === 'typing' ? 'ASKKPIT' : 'You'}</div>
+        ${who === 'typing'
+          ? '<div class="typing"><span></span><span></span><span></span></div>'
+          : `<div class="msg-bubble">${text}</div>`}
+      </div>`;
+
+    if (who === 'typing') row.id = 'typingRow';
+    messagesEl.appendChild(row);
+    chatArea.scrollTop = chatArea.scrollHeight;
+    return row;
+  }
+
+  function sendMessage() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    addMessage(text, 'user');
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    addMessage('', 'typing');
+
+    // Replace setTimeout + getReply with a real fetch() to your Django view
+    setTimeout(() => {
+      document.getElementById('typingRow')?.remove();
+      addMessage(getReply(text), 'bot');
+    }, 800 + Math.random() * 400);
+  }
+
+  function newChat() {
+    messagesEl.innerHTML = '';
+    messagesEl.style.display = 'none';
+    welcomeEl.style.display = '';
+    closeSidebar();
+  }
+
+  // Sidebar toggle for mobile
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('show');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('overlay').classList.remove('show');
+  }
+</script>
+
+</body>
+</html>

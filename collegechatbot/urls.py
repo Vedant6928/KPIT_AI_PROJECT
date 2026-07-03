@@ -23,4 +23,5 @@ urlpatterns = [
     path('',           views.auth_page,       name='auth'),
     path('dashboard/', views.dashboard_view,  name='dashboard'),
     path('logout/',    views.logout_view,     name='logout'),
+    path('chat/',      views.chatbot_view,    name='chatbot'),
 ]

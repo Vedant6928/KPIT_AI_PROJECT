@@ -62,6 +62,11 @@ def dashboard_view(request):
     return render(request, 'dashboard.html')
 
 
+def chatbot_view(request):
+    if not request.user.is_authenticated:
+        return redirect('auth')
+    return render(request, 'chatbot.html')
+
 def logout_view(request):
     logout(request)
     return redirect('auth')

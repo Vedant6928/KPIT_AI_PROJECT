@@ -2,6 +2,10 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import FAQ
 
 def auth_page(request):
 
@@ -66,6 +70,84 @@ def chatbot_view(request):
     if not request.user.is_authenticated:
         return redirect('auth')
     return render(request, 'chatbot.html')
+
+FALLBACK_ANSWER = (
+    "I don't have information on that yet. Please contact the college office, "
+    "or try rephrasing your question."
+)
+
+STOPWORDS = {
+    "a", "an", "the", "is", "are", "was", "were", "am", "be", "been",
+    "what", "when", "where", "who", "how", "do", "does", "did",
+    "tell", "me", "about", "my", "your", "i", "you", "please",
+    "of", "for", "to", "in", "on", "at", "and", "or", "it", "this", "that",
+}
+
+
+def _tokenize(text):
+    words = ''.join(ch if ch.isalnum() else ' ' for ch in text.lower()).split()
+    return {w for w in words if w not in STOPWORDS}
+
+
+def find_best_faq_match(user_message, cutoff=0.5):
+    """
+    Compares the user's message against every FAQ question + keyword phrase
+    using word-overlap similarity (ignoring common stopwords), and returns
+    the best matching FAQ's answer. Returns None if nothing matches well enough.
+    """
+    user_message = user_message.strip()
+    if not user_message:
+        return None
+
+    user_words = _tokenize(user_message)
+    if not user_words:
+        return None
+
+    best_score = 0.0
+    best_answer = None
+
+    for faq in FAQ.objects.all():
+        candidates = [faq.question]
+        if faq.keywords:
+            candidates += [k.strip() for k in faq.keywords.split(',') if k.strip()]
+
+        for phrase in candidates:
+            phrase_words = _tokenize(phrase)
+            if not phrase_words:
+                continue
+            # Jaccard-style overlap, weighted toward how much of the *phrase* is covered
+            overlap = user_words & phrase_words
+            if not overlap:
+                continue
+            # How much of the *shorter* side is covered — handles short queries
+            # like "ut date?" matching a longer keyword phrase well.
+            score = len(overlap) / min(len(phrase_words), len(user_words))
+            if score > best_score:
+                best_score = score
+                best_answer = faq.answer
+
+    if best_score >= cutoff:
+        return best_answer
+    return None
+
+
+
+@csrf_exempt
+def ask_ai(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        user_message = data.get("message", "")
+
+        answer = find_best_faq_match(user_message) or FALLBACK_ANSWER
+
+        return JsonResponse({
+            "answer": answer
+        })
+
+    return JsonResponse({
+        "error": "POST request required"
+    }, status=400)
+
 
 def logout_view(request):
     logout(request)

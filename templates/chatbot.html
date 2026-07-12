@@ -251,17 +251,28 @@
     .messages {
       display: flex;
       flex-direction: column;
-      gap: 0;
+      gap: 14px;
       padding: 24px 0;
     }
 
     .msg-row {
       display: flex;
-      padding: 10px clamp(16px, 6vw, 80px);
-      gap: 14px;
+      padding: 0 clamp(16px, 6vw, 80px);
+      gap: 10px;
       max-width: 860px;
       width: 100%;
       margin: 0 auto;
+      align-items: flex-end;
+    }
+
+    /* bot messages: avatar + bubble on the LEFT */
+    .msg-row.bot-row {
+      justify-content: flex-start;
+    }
+
+    /* user messages: bubble on the RIGHT, avatar after it */
+    .msg-row.user-row {
+      justify-content: flex-end;
     }
 
     .msg-av {
@@ -270,13 +281,61 @@
       flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       font-size: 12px; font-weight: 700; color: #fff;
-      margin-top: 2px;
     }
     .msg-av.bot  { background: var(--orange); }
     .msg-av.user { background: #444; }
 
-    .msg-bubble { font-size: 15px; line-height: 1.65; color: var(--text); }
-    .msg-name   { font-size: 12px; font-weight: 700; margin-bottom: 4px; color: var(--text-muted); }
+    .msg-col {
+      display: flex;
+      flex-direction: column;
+      max-width: 75%;
+    }
+    .user-row .msg-col { align-items: flex-end; }
+    .bot-row .msg-col  { align-items: flex-start; }
+
+    .msg-name   { font-size: 11.5px; font-weight: 700; margin-bottom: 4px; color: var(--text-muted); }
+
+    .msg-bubble {
+      font-size: 15px;
+      line-height: 1.55;
+      padding: 10px 14px;
+      border-radius: 16px;
+      word-wrap: break-word;
+    }
+
+    /* bot bubble: left-aligned, neutral surface, square-ish corner near avatar */
+    .bot-row .msg-bubble {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+
+    /* user bubble: right-aligned, orange accent, square-ish corner near avatar */
+    .user-row .msg-bubble {
+      background: var(--orange);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .user-row .msg-bubble a { color: #fff; text-decoration: underline; }
+
+    .msg-bubble p:not(:last-child) { margin-bottom: 8px; }
+    .msg-bubble pre {
+      background: rgba(0,0,0,0.15);
+      padding: 8px 10px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+      margin: 6px 0;
+    }
+    .msg-bubble code {
+      background: rgba(0,0,0,0.08);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+    .user-row .msg-bubble code,
+    .user-row .msg-bubble pre { background: rgba(255,255,255,0.18); }
 
     /* ── INPUT BAR ───────────────────────── */
     .input-wrap {
@@ -339,7 +398,15 @@
 
     /* typing indicator */
     .typing-row { align-items: center; }
-    .typing { display: flex; gap: 4px; padding: 4px 0; }
+    .typing {
+      display: flex; gap: 4px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      width: fit-content;
+    }
     .typing span {
       width: 6px; height: 6px; border-radius: 50%;
       background: var(--text-muted);
@@ -513,20 +580,23 @@
       welcomeEl.style.display = 'none';
       messagesEl.style.display = 'flex';
     }
+    const isBot = who === 'bot' || who === 'typing';
     const row = document.createElement('div');
-    row.className = 'msg-row' + (who === 'typing' ? ' typing-row' : '');
+    row.className = 'msg-row ' + (isBot ? 'bot-row' : 'user-row') + (who === 'typing' ? ' typing-row' : '');
 
-    const initial = who === 'bot' ? 'AK' : (document.querySelector('.avatar')?.textContent?.trim() || 'U');
-    const avClass = who === 'bot' || who === 'typing' ? 'bot' : 'user';
+    const initial = isBot ? 'AK' : (document.querySelector('.avatar')?.textContent?.trim() || 'U');
+    const avatarHtml = `<div class="msg-av ${isBot ? 'bot' : 'user'}">${initial}</div>`;
 
-    row.innerHTML = `
-      <div class="msg-av ${avClass}">${who === 'bot' || who === 'typing' ? 'AK' : initial}</div>
-      <div>
-        <div class="msg-name">${who === 'bot' || who === 'typing' ? 'ASKKPIT' : 'You'}</div>
+    const colHtml = `
+      <div class="msg-col">
+        <div class="msg-name">${isBot ? 'ASKKPIT' : 'You'}</div>
         ${who === 'typing'
           ? '<div class="typing"><span></span><span></span><span></span></div>'
-          : `<div class="msg-bubble">${text}</div>`}
+          : `<div class="msg-bubble">${marked.parse(text)}</div>`}
       </div>`;
+
+    // Bot: avatar first, then bubble (left side). User: bubble first, then avatar (right side).
+    row.innerHTML = isBot ? (avatarHtml + colHtml) : (colHtml + avatarHtml);
 
     if (who === 'typing') row.id = 'typingRow';
     messagesEl.appendChild(row);
@@ -534,7 +604,7 @@
     return row;
   }
 
-  function sendMessage() {
+  async function sendMessage()  {
     const text = inputEl.value.trim();
     if (!text) return;
 
@@ -543,11 +613,36 @@
     inputEl.style.height = 'auto';
     addMessage('', 'typing');
 
-    // Replace setTimeout + getReply with a real fetch() to your Django view
-    setTimeout(() => {
-      document.getElementById('typingRow')?.remove();
-      addMessage(getReply(text), 'bot');
-    }, 800 + Math.random() * 400);
+    // Random 1-2 second "thinking" delay so the reply doesn't feel instant
+    const thinkTime = 1000 + Math.random() * 1000;
+
+    try {
+
+    const [response] = await Promise.all([
+        fetch("/ask-ai/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: text
+            })
+        }),
+        new Promise(resolve => setTimeout(resolve, thinkTime))
+    ]);
+
+    const data = await response.json();
+
+    document.getElementById("typingRow")?.remove();
+
+    addMessage(data.answer, "bot");
+
+} catch (error) {
+
+    document.getElementById("typingRow")?.remove();
+
+    addMessage("Something went wrong while contacting the AI.", "bot");
+}
   }
 
   function newChat() {
@@ -567,6 +662,6 @@
     document.getElementById('overlay').classList.remove('show');
   }
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
 </html>

@@ -6,6 +6,25 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
 from .models import FAQ
+from spellchecker import SpellChecker
+
+spell = SpellChecker()
+
+CUSTOM_WORDS = [
+    "kpit",
+    "msbte",
+    "aiml",
+    "cgpa",
+    "semester",
+    "hostel",
+    "admission",
+    "syllabus",
+    "principal",
+    "hod",
+]
+
+spell.word_frequency.load_words(CUSTOM_WORDS)
+
 
 def auth_page(request):
 
@@ -88,6 +107,21 @@ def _tokenize(text):
     words = ''.join(ch if ch.isalnum() else ' ' for ch in text.lower()).split()
     return {w for w in words if w not in STOPWORDS}
 
+def correct_sentence(sentence):
+    words = sentence.split()
+    corrected = []
+
+    for word in words:
+        # Keep numbers unchanged
+        if word.isdigit():
+            corrected.append(word)
+            continue
+
+        corrected_word = spell.correction(word.lower())
+
+        corrected.append(corrected_word if corrected_word else word)
+
+    return " ".join(corrected)
 
 def find_best_faq_match(user_message, cutoff=0.5):
     """
@@ -137,6 +171,7 @@ def ask_ai(request):
     if request.method == "POST":
         data = json.loads(request.body)
         user_message = data.get("message", "")
+        user_message = correct_sentence(user_message)
 
         answer = find_best_faq_match(user_message) or FALLBACK_ANSWER
 

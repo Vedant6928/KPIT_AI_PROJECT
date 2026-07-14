@@ -1,7 +1,6 @@
 from django.contrib import admin
-from .models import Register_details, FAQ
+from .models import  FAQ
 
-admin.site.register(Register_details)
 
 
 @admin.register(FAQ)

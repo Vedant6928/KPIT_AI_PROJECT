@@ -22,8 +22,9 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('',           views.auth_page,       name='auth'),
     path('dashboard/', views.dashboard_view,  name='dashboard'),
-   
+    path("load-chat/<int:session_id>/", views.load_chat, name="load_chat"),
     path('logout/',    views.logout_view,     name='logout'),
     path('chat/',      views.chatbot_view,    name='chatbot'),
     path('ask-ai/', views.ask_ai, name='ask_ai'),
+    
 ]

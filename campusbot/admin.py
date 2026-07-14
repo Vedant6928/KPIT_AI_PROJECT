@@ -1,6 +1,9 @@
 from django.contrib import admin
 from .models import  FAQ
+from .models import ChatSession, ChatMessage
 
+admin.site.register(ChatSession)
+admin.site.register(ChatMessage)
 
 
 @admin.register(FAQ)

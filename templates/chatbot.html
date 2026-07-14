@@ -453,9 +453,19 @@
   </button>
 
   <div class="sidebar-label">Recent</div>
-  <div class="chat-history-item">Admission requirements</div>
-  <div class="chat-history-item">Fee structure 2024</div>
-  <div class="chat-history-item">Placement records</div>
+
+<div id="chat-history">
+    {% for session in sessions %}
+        <div class="chat-history-item"
+             data-session-id="{{ session.id }}">
+            {{ session.title }}
+        </div>
+    {% empty %}
+        <div class="chat-history-item">
+            No chats yet
+        </div>
+    {% endfor %}
+</div>
 
   <div class="sidebar-bottom">
     <div class="user-row">
@@ -538,6 +548,7 @@
   const messagesEl = document.getElementById('messages');
   const welcomeEl  = document.getElementById('welcomeScreen');
   const inputEl    = document.getElementById('userInput');
+  let currentSessionId = null;
 
   // Replace this with a real fetch() to your Django API
   const KB = {
@@ -611,21 +622,27 @@
 
     try {
 
-    const [response] = await Promise.all([
-        fetch("/ask-ai/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: text
-            })
-        }),
-        new Promise(resolve => setTimeout(resolve, thinkTime))
-    ]);
+    console.log("Current Session:", currentSessionId);
+
+const [response] = await Promise.all([
+    fetch("/ask-ai/", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            message: text,
+            session_id: currentSessionId
+        })
+    }),
+    new Promise(resolve => setTimeout(resolve, thinkTime))
+]);
 
     const data = await response.json();
-
+    console.log("Response:", data);
+    if (data.session_id) {
+    currentSessionId = data.session_id;
+    }
     document.getElementById("typingRow")?.remove();
 
     addMessage(data.answer, "bot");
@@ -639,11 +656,15 @@
   }
 
   function newChat() {
+
+    currentSessionId = null;
+
     messagesEl.innerHTML = '';
     messagesEl.style.display = 'none';
     welcomeEl.style.display = '';
+
     closeSidebar();
-  }
+}
 
   // Sidebar toggle for mobile
   function toggleSidebar() {
@@ -654,7 +675,34 @@
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('overlay').classList.remove('show');
   }
+  document.querySelectorAll(".chat-history-item").forEach(item => {
+
+    item.addEventListener("click", async function () {
+
+        const sessionId = this.dataset.sessionId;
+
+        currentSessionId = sessionId;
+
+        const response = await fetch(`/load-chat/${sessionId}/`);
+
+        const data = await response.json();
+
+        messagesEl.innerHTML = "";
+
+        welcomeEl.style.display = "none";
+        messagesEl.style.display = "flex";
+
+        data.messages.forEach(msg => {
+
+            addMessage(msg.message, msg.sender);
+
+        });
+
+    });
+
+});
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </body>
 </html>

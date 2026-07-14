@@ -2,7 +2,28 @@ from django.db import models
  
 # Create your models here.
 
+from django.contrib.auth.models import User
 
+class ChatSession(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="chat_sessions"
+    )
+    title = models.CharField(max_length=150)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class ChatMessage(models.Model):
+    session = models.ForeignKey(
+        ChatSession,
+        on_delete=models.CASCADE,
+        related_name="messages"
+    )
+    sender = models.CharField(max_length=10)   # "user" or "bot"
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
 class FAQ(models.Model):
     CATEGORY_CHOICES = [

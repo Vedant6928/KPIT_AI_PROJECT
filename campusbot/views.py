@@ -5,8 +5,9 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .models import FAQ
+from .models import FAQ, ChatSession, ChatMessage
 from spellchecker import SpellChecker
+from django.contrib.auth.decorators import login_required
 
 spell = SpellChecker()
 
@@ -88,7 +89,15 @@ def dashboard_view(request):
 def chatbot_view(request):
     if not request.user.is_authenticated:
         return redirect('auth')
-    return render(request, 'chatbot.html')
+
+    sessions = ChatSession.objects.filter(
+        user=request.user
+    ).order_by("-updated_at")
+
+    return render(request, "chatbot.html", {
+        "sessions": sessions
+    })
+
 
 FALLBACK_ANSWER = (
     "I don't have information on that yet. Please contact the college office, "
@@ -166,24 +175,80 @@ def find_best_faq_match(user_message, cutoff=0.5):
 
 
 
+
 @csrf_exempt
 def ask_ai(request):
     if request.method == "POST":
         data = json.loads(request.body)
+
         user_message = data.get("message", "")
+        session_id = data.get("session_id")
+
         user_message = correct_sentence(user_message)
 
+        # Create a new chat if none exists
+        if session_id:
+            session = ChatSession.objects.get(
+                id=session_id,
+                user=request.user
+            )
+        else:
+            session = ChatSession.objects.create(
+                user=request.user,
+                title=user_message[:40]
+            )
+
+        # Save user's message
+        ChatMessage.objects.create(
+            session=session,
+            sender="user",
+            message=user_message
+        )
+
+        # Find answer
         answer = find_best_faq_match(user_message) or FALLBACK_ANSWER
 
+        # Save bot's reply
+        ChatMessage.objects.create(
+            session=session,
+            sender="bot",
+            message=answer
+        )
+
         return JsonResponse({
-            "answer": answer
+            "answer": answer,
+            "session_id": session.id
         })
 
-    return JsonResponse({
-        "error": "POST request required"
-    }, status=400)
+    return JsonResponse({"error": "POST request required"}, status=400)
 
+@login_required
+def load_chat(request, session_id):
+    try:
+        session = ChatSession.objects.get(
+            id=session_id,
+            user=request.user
+        )
 
+        messages = []
+
+        for msg in session.messages.all().order_by("created_at"):
+            messages.append({
+                "sender": msg.sender,
+                "message": msg.message
+            })
+
+        return JsonResponse({
+            "success": True,
+            "session_id": session.id,
+            "messages": messages
+        })
+
+    except ChatSession.DoesNotExist:
+        return JsonResponse({
+            "success": False
+        }, status=404)
+    
 def logout_view(request):
     logout(request)
     return redirect('auth')

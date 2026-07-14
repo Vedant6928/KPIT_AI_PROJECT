@@ -16,12 +16,6 @@ STARTER_FAQS = [
         "keywords": "tuition fees, semester fee, course fee, how much is the fee",
     },
     {
-        "question": "Tell me about hostel facilities",
-        "answer": "On-campus hostels with 24/7 security, Wi-Fi, a mess, and a common room. Hostel seats are allotted after admission on a first-come basis.",
-        "category": "hostel",
-        "keywords": "hostel timings, hostel rules, hostel availability, is hostel available",
-    },
-    {
         "question": "What courses are offered?",
         "answer": "We offer Computer Science, Mechanical Engineering, Civil Engineering, Business Administration, and Design programs.",
         "category": "academic",
@@ -32,6 +26,12 @@ STARTER_FAQS = [
         "answer": "UT1 is scheduled from 10th to 14th August 2026. Please check the notice board for subject-wise timings.",
         "category": "academic",
         "keywords": "unit test date, ut1 schedule, next unit test, exam schedule",
+    },
+    {
+        "question": "Is hostel facility available?",
+        "answer": "No hostel facility is available at the college.",
+        "category": "hostel",
+        "keywords": "hostel, hostel facility, hostel timings, hostel rules, hostel availability, is hostel available, tell me about hostel, hostel accommodation",
     },
 ]
 

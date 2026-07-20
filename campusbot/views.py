@@ -5,7 +5,8 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
-from .models import FAQ, ChatSession, ChatMessage
+from django.db.models import F
+from .models import FAQ, ChatSession, ChatMessage, UnansweredQuestion
 from spellchecker import SpellChecker
 from django.contrib.auth.decorators import login_required
 
@@ -174,6 +175,30 @@ def find_best_faq_match(user_message, cutoff=0.5):
     return None
 
 
+def log_unanswered_question(user_message, user):
+    """
+    Records a question the FAQ system couldn't answer, so it shows up
+    in the admin panel for review. If the same question (case-insensitive)
+    was already logged and hasn't been resolved yet, just bump its counter
+    instead of creating a duplicate row.
+    """
+    user_message = user_message.strip()
+    if not user_message:
+        return
+
+    existing = UnansweredQuestion.objects.filter(
+        question__iexact=user_message,
+        is_resolved=False
+    ).first()
+
+    if existing:
+        existing.times_asked = F('times_asked') + 1
+        existing.save(update_fields=['times_asked', 'last_asked_at'])
+    else:
+        UnansweredQuestion.objects.create(
+            question=user_message,
+            asked_by=user if user.is_authenticated else None
+        )
 
 
 @csrf_exempt
@@ -206,7 +231,15 @@ def ask_ai(request):
         )
 
         # Find answer
-        answer = find_best_faq_match(user_message) or FALLBACK_ANSWER
+        matched_answer = find_best_faq_match(user_message)
+
+        if matched_answer:
+            answer = matched_answer
+        else:
+            answer = FALLBACK_ANSWER
+            # No FAQ matched this question — log it so admins can review
+            # it and add it to the FAQ table.
+            log_unanswered_question(user_message, request.user)
 
         # Save bot's reply
         ChatMessage.objects.create(

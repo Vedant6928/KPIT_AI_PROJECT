@@ -43,3 +43,32 @@ class FAQ(models.Model):
     def __str__(self):
         return self.question
 
+
+class UnansweredQuestion(models.Model):
+    """
+    Logged automatically whenever the chatbot has no good FAQ match
+    for a user's question. Visible in the admin panel so staff can
+    review real student questions and turn them into FAQ entries.
+    """
+    question = models.CharField(max_length=500)
+    asked_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="unanswered_questions"
+    )
+    times_asked = models.PositiveIntegerField(default=1)
+    is_resolved = models.BooleanField(
+        default=False,
+        help_text="Tick this once the question has been added to the FAQ table"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_asked_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-last_asked_at']
+
+    def __str__(self):
+        return self.question
+

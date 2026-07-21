@@ -101,8 +101,21 @@ def chatbot_view(request):
 
 
 FALLBACK_ANSWER = (
-    "I don't have information on that yet. Please contact the college office, "
-    "or try rephrasing your question."
+"""I couldn't find information related to your question.
+
+Please try asking in a different way or contact the College Office for further assistance.
+
+Here are some topics I can help with:
+
+- Admissions
+- Fees
+- Scholarships
+- Placements
+- Library
+- Bus Routes
+- Departments
+- Examinations
+- Campus Facilities"""
 )
 
 STOPWORDS = {
@@ -132,6 +145,129 @@ def correct_sentence(sentence):
         corrected.append(corrected_word if corrected_word else word)
 
     return " ".join(corrected)
+
+GREETING_WORDS = {
+    "hi", "hii", "hiii", "hello", "hey", "heya", "hola",
+    "goodmorning", "goodafternoon", "goodevening",
+}
+
+GREETING_RESPONSE = (
+"""### 👋 Hello!
+
+I'm **ASKKPIT**, the AI assistant for **K. P. Patil Institute of Technology**.
+
+I can help you with information about:
+
+- Admissions
+- Courses
+- Fees
+- Scholarships
+- Placements
+- Internships
+- Library
+- Bus Routes
+- Departments
+- Examinations
+- Campus Facilities
+
+Just ask your question in natural language, and I'll do my best to help."""
+)
+
+IDENTITY_PHRASES = {
+    "who are you",
+    "what are you",
+    "who r u",
+    "what is your name",
+    "whats your name",
+    "what's your name",
+    "tell me about yourself",
+    "your name",
+}
+
+IDENTITY_RESPONSE = (
+"""### 🎓 About ASKKPIT
+
+I am **ASKKPIT**, the official AI-powered college assistant for **K. P. Patil Institute of Technology**.
+
+I can help you with information about:
+
+- Admissions
+- Courses
+- Fees
+- Scholarships
+- Placements
+- Internships
+- Library
+- Bus Routes
+- Departments
+- Examinations
+- Campus Facilities
+
+Simply ask your question in natural language, and I'll do my best to help."""
+)
+
+THANKS_WORDS = {
+    "thanks", "thank", "thankyou", "thanku", "thnx", "thx", "ty",
+}
+
+THANKS_RESPONSE = (
+    "You're welcome! 😊 Let me know if you have any other questions about KPIT."
+)
+
+BYE_WORDS = {
+    "bye", "byebye", "goodbye", "gudbye", "seeya", "cya", "byee",
+    "see", "ya",
+}
+
+BYE_RESPONSE = (
+    "Goodbye! 👋 Feel free to come back anytime you have questions about KPIT."
+)
+
+
+def detect_smalltalk_response(user_message):
+    """
+    Checks the user's message for simple greetings (hi/hello/hey...),
+    identity questions (who are you / what's your name...), thanks, or
+    goodbyes, and returns an appropriate canned response. Returns None
+    if it's none of these, so the caller can fall back to normal FAQ
+    matching.
+    """
+    normalized = user_message.strip().lower()
+    normalized = ''.join(ch for ch in normalized if ch.isalnum() or ch.isspace())
+    normalized = ' '.join(normalized.split())  # collapse extra spaces
+
+    if not normalized:
+        return None
+
+    # Identity questions first (checked as substrings so phrasing can vary
+    # slightly, e.g. "hey who are you" still matches).
+    for phrase in IDENTITY_PHRASES:
+        if phrase in normalized:
+            return IDENTITY_RESPONSE
+
+    words = normalized.split()
+    FILLER = {"there", "bot", "buddy", "friend", "so", "much", "you", "u", "very", "for", "help", "your", "help", "and", "again", "all", "the"}
+
+    # Thanks: e.g. "thanks", "thank you", "thank you so much", "thanks a lot"
+    if words and any(w in THANKS_WORDS for w in words) and \
+            all(w in THANKS_WORDS or w in FILLER or w == "a" or w == "lot" for w in words):
+        return THANKS_RESPONSE
+
+    # Bye: e.g. "bye", "goodbye", "bye bye", "see you", "see ya"
+    if words and any(w in BYE_WORDS for w in words) and \
+            all(w in BYE_WORDS or w in FILLER for w in words):
+        return BYE_RESPONSE
+
+    # Greeting words: match if the whole message is just greeting word(s)
+    # plus harmless filler like "there"/"bot", e.g. "hi", "hello there",
+    # "hey hey" — but not when the greeting is only part of a longer real
+    # question like "hi what is the fee structure".
+    if words and any(w in GREETING_WORDS for w in words) and \
+            all(w in GREETING_WORDS or w in FILLER for w in words):
+        return GREETING_RESPONSE
+
+    return None
+
 
 def find_best_faq_match(user_message, cutoff=0.5):
     """
@@ -230,16 +366,23 @@ def ask_ai(request):
             message=user_message
         )
 
-        # Find answer
-        matched_answer = find_best_faq_match(user_message)
+        # Check for smalltalk first (greetings like "hi"/"hello",
+        # identity questions like "who are you") before hitting the FAQs.
+        smalltalk_answer = detect_smalltalk_response(user_message)
 
-        if matched_answer:
-            answer = matched_answer
+        if smalltalk_answer:
+            answer = smalltalk_answer
         else:
-            answer = FALLBACK_ANSWER
-            # No FAQ matched this question — log it so admins can review
-            # it and add it to the FAQ table.
-            log_unanswered_question(user_message, request.user)
+            # Find answer
+            matched_answer = find_best_faq_match(user_message)
+
+            if matched_answer:
+                answer = matched_answer
+            else:
+                answer = FALLBACK_ANSWER
+                # No FAQ matched this question — log it so admins can review
+                # it and add it to the FAQ table.
+                log_unanswered_question(user_message, request.user)
 
         # Save bot's reply
         ChatMessage.objects.create(

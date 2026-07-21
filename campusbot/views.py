@@ -107,15 +107,15 @@ Please try asking in a different way or contact the College Office for further a
 
 Here are some topics I can help with:
 
-- Admissions
-- Fees
-- Scholarships
-- Placements
-- Library
-- Bus Routes
-- Departments
-- Examinations
-- Campus Facilities"""
+    - Admissions
+    - Fees
+    - Scholarships
+    - Placements
+    - Library
+    - Bus Routes
+    - Departments
+    - Examinations
+    - Campus Facilities"""
 )
 
 STOPWORDS = {
@@ -158,17 +158,17 @@ I'm **ASKKPIT**, the AI assistant for **K. P. Patil Institute of Technology**.
 
 I can help you with information about:
 
-- Admissions
-- Courses
-- Fees
-- Scholarships
-- Placements
-- Internships
-- Library
-- Bus Routes
-- Departments
-- Examinations
-- Campus Facilities
+    - Admissions
+    - Courses
+    - Fees
+    - Scholarships
+    - Placements
+    - Internships
+    - Library
+    - Bus Routes
+    - Departments
+    - Examinations
+    - Campus Facilities
 
 Just ask your question in natural language, and I'll do my best to help."""
 )
@@ -191,17 +191,17 @@ I am **ASKKPIT**, the official AI-powered college assistant for **K. P. Patil In
 
 I can help you with information about:
 
-- Admissions
-- Courses
-- Fees
-- Scholarships
-- Placements
-- Internships
-- Library
-- Bus Routes
-- Departments
-- Examinations
-- Campus Facilities
+    - Admissions
+    - Courses
+    - Fees
+    - Scholarships
+    - Placements
+    - Internships
+    - Library
+    - Bus Routes
+    - Departments
+    - Examinations
+    - Campus Facilities
 
 Simply ask your question in natural language, and I'll do my best to help."""
 )
